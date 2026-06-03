@@ -12,7 +12,7 @@ load_dotenv(ROOT / ".env")
 
 class Settings:
     def __init__(self) -> None:
-        self.upstage_api_key: str = os.environ["UPSTAGE_API_KEY"]
+        self.upstage_api_key: str = os.environ.get("UPSTAGE_API_KEY", "")
         self.upstage_base_url: str = "https://api.upstage.ai/v1/solar"
         self.chat_model: str = os.getenv("CHAT_MODEL", "solar-pro")
         self.embedding_model: str = os.getenv("EMBEDDING_MODEL", "solar-embedding-1-large-query")
