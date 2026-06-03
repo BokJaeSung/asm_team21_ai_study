@@ -43,8 +43,8 @@ class SessionManager:
 
     def purge_expired(self) -> int:
         """만료된 세션을 삭제하고 삭제 개수를 반환한다."""
-        expired = [sid for sid, s in self._store.items() if self._is_expired(s)]
         with self._lock:
+            expired = [sid for sid, s in self._store.items() if self._is_expired(s)]
             for sid in expired:
                 self._store.pop(sid, None)
         return len(expired)

@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import threading
+
 import chromadb
 
 from ..llm import embed_query
@@ -7,14 +9,17 @@ from ..state import AgentState
 from ...config import get_settings
 
 _collection: chromadb.Collection | None = None
+_lock = threading.Lock()
 
 
 def _get_collection() -> chromadb.Collection:
     global _collection
     if _collection is None:
-        s = get_settings()
-        client = chromadb.PersistentClient(path=s.chroma_path)
-        _collection = client.get_or_create_collection(s.chroma_collection)
+        with _lock:
+            if _collection is None:
+                s = get_settings()
+                client = chromadb.PersistentClient(path=s.chroma_path)
+                _collection = client.get_or_create_collection(s.chroma_collection)
     return _collection
 
 
