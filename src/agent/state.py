@@ -19,3 +19,4 @@ class AgentState(TypedDict):
     generated_answer: str
     execution_history: Annotated[list[str], operator.add]  # 각 노드가 이름을 append
     chat_history: list[dict]              # [{"role": "user"|"assistant", "content": str}]
+    is_fallback_crawl: bool               # 추가 크롤링으로 얻은 결과인지 여부
