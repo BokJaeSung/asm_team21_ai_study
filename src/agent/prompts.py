@@ -41,3 +41,9 @@ SCHEDULE_PROMPT = """아래 문서에서 일정·날짜·마감일·링크를 �
 
 [문서]
 {context}"""
+
+RELEVANCE_CHECK_PROMPT = """아래 문서 청크가 질문에 답하는 데 관련이 있는지 판단하세요.
+관련 있으면 "yes", 없으면 "no"로만 답하세요.
+
+질문: {question}
+문서 청크: {chunk}"""
