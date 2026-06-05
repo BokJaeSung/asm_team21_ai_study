@@ -491,7 +491,9 @@ if st.session_state.waiting:
     )
     if last_user:
         fetch_response(last_user)
-    st.rerun()
+        st.rerun()
+    else:
+        st.session_state.waiting = False
 
 # ── 자동 스크롤 ────────────────────────────────────────────────
 scroll_to_bottom()
