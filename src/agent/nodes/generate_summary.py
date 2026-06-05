@@ -4,13 +4,12 @@ from ..llm import chat
 from ..prompts import SYSTEM_PROMPT, SUMMARY_PROMPT
 from ..state import AgentState
 from ...config import get_settings
+from .context import format_context
 
 
 def generate_summary_node(state: AgentState) -> dict:
     s = get_settings()
-    context = "\n\n---\n\n".join(
-        f"[출처: {c['source']}]\n{c['content']}" for c in state["retrieved_chunks"]
-    )
+    context = format_context(state["retrieved_chunks"])
     system = SYSTEM_PROMPT + "\n\n" + SUMMARY_PROMPT.format(context=context)
 
     messages = [{"role": "system", "content": system}]
