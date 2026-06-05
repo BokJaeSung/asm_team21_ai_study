@@ -25,10 +25,15 @@ EMB_DIR = ROOT / "data" / "embeddings"
 # ── 청크 텍스트 파싱 (embed_pdf.py 가 생성한 마크다운 형식) ─────────
 
 def _parse_chunks(md_path: Path) -> list[str]:
-    """'## chunk N (page P)' 구분자를 기준으로 청크 텍스트를 추출한다."""
+    """'## chunk N (page P)' 구분자를 기준으로 청크 텍스트를 추출한다.
+    구분자가 없으면 파일 전체를 단일 청크로 반환한다."""
     text = md_path.read_text(encoding="utf-8")
     parts = re.split(r"^## chunk \d+.*$", text, flags=re.MULTILINE)
-    return [p.strip() for p in parts[1:] if p.strip()]
+    chunks = [p.strip() for p in parts[1:] if p.strip()]
+    if not chunks:
+        # 단일 문서 임베딩 포맷: 파일 전체를 하나의 청크로 처리
+        chunks = [text.strip()]
+    return chunks
 
 
 # ── 메인 ─────────────────────────────────────────────────────────────
@@ -67,6 +72,10 @@ def ingest(reset: bool = False) -> None:
 
         chunks = _parse_chunks(md_path)
         embeddings: np.ndarray = np.load(npy_path)
+
+        # 단일 벡터 (4096,) → (1, 4096) 로 reshape
+        if embeddings.ndim == 1:
+            embeddings = embeddings.reshape(1, -1)
 
         if len(chunks) != embeddings.shape[0]:
             print(f"  ! {name}: 청크 수({len(chunks)}) ≠ 임베딩 행({embeddings.shape[0]}) — 건너뜀")
