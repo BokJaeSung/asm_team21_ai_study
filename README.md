@@ -14,12 +14,15 @@ OT 자료와 홈페이지 공지사항에서 정보를 검색해 자연어 질�
 ├── run.py                        # 서버 실행 진입점
 ├── requirements.txt
 ├── .env.example
+├── Dockerfile
+├── docker-compose.yml
+│
+├── scripts/
+│   └── setup_data.py             # Google Drive에서 원문·임베딩 다운로드
 │
 ├── src/
 │   ├── config.py                 # 환경변수 중앙 관리
-│   ├── embed.py                  # 크롤링 문서(.md) 임베딩
-│   ├── embed_pdf.py              # PDF 파싱 → 청킹 → 임베딩
-│   ├── ingest_chroma.py          # data/raw + data/embeddings → ChromaDB 적재
+│   ├── ingest_crawl.py           # data/raw + data/embeddings → ChromaDB 적재
 │   │
 │   ├── agent/                    # LangGraph 오케스트레이션
 │   │   ├── state.py              # AgentState TypedDict
@@ -27,10 +30,10 @@ OT 자료와 홈페이지 공지사항에서 정보를 검색해 자연어 질�
 │   │   ├── llm.py                # Upstage LLM / 임베딩 공용 클라이언트
 │   │   ├── graph.py              # 그래프 조립 + 컴파일 (싱글톤)
 │   │   └── nodes/
-│   │       ├── router.py         # 의도 분류 (5종)
-│   │       ├── handle_general.py # 일반 대화 응답
+│   │       ├── router.py             # 의도 분류 (5종)
+│   │       ├── handle_general.py     # 일반 대화 응답
 │   │       ├── handle_irrelevant.py  # 소마 무관 거절
-│   │       ├── retrieve.py       # ChromaDB 벡터 검색
+│   │       ├── retrieve.py           # ChromaDB 벡터 검색
 │   │       ├── generate_answer.py    # RAG 답변 생성
 │   │       ├── generate_summary.py   # 다중 문서 요약
 │   │       ├── format_schedule.py    # 일정·링크 구조화 추출
@@ -47,19 +50,18 @@ OT 자료와 홈페이지 공지사항에서 정보를 검색해 자연어 질�
 │           ├── sessions.py       # POST/GET/DELETE /sessions
 │           └── chat.py           # POST /chat/{session_id}
 │
-├── sadari_front/                 # Streamlit UI + Docker 실행 구성
-│   ├── Dockerfile                # 루트 API와 UI 공용 이미지
-│   ├── docker-compose.yml        # FastAPI + Streamlit 컨테이너 실행
+├── sadari_front/                 # Streamlit 채팅 UI
 │   └── app/
 │       └── ui.py                 # 세션 기반 채팅 UI
 │
 ├── data/                         # 런타임 생성 (git 제외)
-│   ├── raw/                      # PDF → 텍스트·마크다운 원문
-│   ├── embeddings/               # .npy + .json 임베딩 파일
-│   └── chroma/                   # ChromaDB 영구 저장소
+│   ├── raw/                      # 크롤링 원문 (.md)
+│   ├── embeddings/               # 임베딩 벡터 (.npy)
+│   └── chroma/                   # ChromaDB 저장소
 │
 └── docs/
-    └── PRD_orchestration.md      # 오케스트레이션 설계 문서
+    ├── PRD_orchestration.md      # 오케스트레이션 설계 문서
+    └── data_setup.md             # 데이터 셋업 가이드
 ```
 
 ---
@@ -89,6 +91,7 @@ User Query
 
 ```bash
 pip install -r requirements.txt
+pip install gdown  # 데이터 다운로드용
 ```
 
 ### 2. 환경변수 설정
@@ -98,20 +101,19 @@ cp .env.example .env
 # .env 에서 UPSTAGE_API_KEY 입력
 ```
 
-### 3. 문서 임베딩 및 ChromaDB 적재
+### 3. 데이터 다운로드 및 ChromaDB 적재
+
+원문과 임베딩 파일은 Google Drive에 저장되어 있다. (문서 인덱스: [구글 시트](https://docs.google.com/spreadsheets/d/1gXUPPp3z0Vw2s3I6JzXrmPzW1ZIqgn3KflOUtgzaTiQ))
 
 ```bash
-# PDF 파싱 + 임베딩
-python -m src.embed_pdf /path/to/file.pdf --name 파일명
+# Google Drive에서 원문(.md) + 임베딩(.npy) 다운로드
+python scripts/setup_data.py
 
-# 크롤링 문서(.md) 임베딩
-python -m src.embed
-
-# ChromaDB 에 적재
-python -m src.ingest_chroma
+# ChromaDB에 적재
+python -m src.ingest_crawl
 
 # 전체 초기화 후 재적재
-python -m src.ingest_chroma --reset
+python -m src.ingest_crawl --reset
 ```
 
 ### 4. 서버 실행
@@ -129,17 +131,21 @@ python run.py --port 9000
 
 서버 기동 후 `http://localhost:8000/docs` 에서 Swagger UI 확인.
 
-### 5. Streamlit UI + API Docker 실행
+### 5. Streamlit UI 실행
 
 ```bash
-cd sadari_front
-cp ../.env.example ../.env
-# ../.env 에서 UPSTAGE_API_KEY 입력
-docker compose up --build
+pip install streamlit requests
+streamlit run sadari_front/app/ui.py --server.headless true
 ```
 
 - Streamlit UI: `http://localhost:8501`
 - FastAPI docs: `http://localhost:8000/docs`
+
+### 6. Docker로 실행 (API 서버)
+
+```bash
+docker compose up --build
+```
 
 ---
 
@@ -173,8 +179,8 @@ curl -s -X POST http://localhost:8000/chat/$SESSION \
 |------|------|
 | 오케스트레이션 | LangGraph |
 | API 서버 | FastAPI + Uvicorn |
-| 임베딩 | Upstage Solar Embedding |
+| 임베딩 | Upstage Solar Embedding (solar-embedding-1-large-passage/query) |
 | LLM | Upstage Solar Pro |
-| 벡터 DB | ChromaDB (로컬) |
-| 문서 파싱 | pypdf |
-| 프론트엔드 | Streamlit (별도) |
+| 벡터 DB | ChromaDB (로컬 파일) |
+| 프론트엔드 | Streamlit |
+| 컨테이너 | Docker / docker compose |
