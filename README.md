@@ -123,6 +123,27 @@ docker compose up --build
 - Streamlit UI: `http://localhost:8501`
 - FastAPI docs: `http://localhost:8000/docs`
 
+### 로그 확인
+
+API 서버 로그를 실시간으로 스트리밍한다.
+
+```bash
+docker logs -f asm_team21_ai_study-api-1
+```
+
+질문이 들어올 때마다 그래프 노드 진입/종료 및 분기 결과가 출력된다.
+
+```
+2026-06-05 11:12:39 INFO src.agent.graph - [GRAPH] ▶ router
+2026-06-05 11:12:39 INFO src.agent.graph - [GRAPH] ✓ router (0.00s)
+2026-06-05 11:12:39 INFO src.agent.graph - [GRAPH] ⤷ router → retrieve_documents (intent=soma_query)
+2026-06-05 11:12:39 INFO src.agent.graph - [GRAPH] ▶ retrieve_documents
+2026-06-05 11:12:40 INFO src.agent.graph - [GRAPH] ✓ retrieve_documents (0.58s)
+2026-06-05 11:12:40 INFO src.agent.graph - [GRAPH] ⤷ retrieve_documents → generate_answer
+2026-06-05 11:12:40 INFO src.agent.graph - [GRAPH] ▶ generate_answer
+2026-06-05 11:12:47 INFO src.agent.graph - [GRAPH] ✓ generate_answer (7.62s)
+```
+
 ---
 
 ## API
