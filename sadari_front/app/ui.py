@@ -45,14 +45,27 @@ def ensure_session() -> str:
     return st.session_state.session_id
 
 
-def post_chat(message: str) -> dict[str, Any]:
-    session_id = ensure_session()
-    response = requests.post(
+def send_chat(session_id: str, message: str) -> requests.Response:
+    return requests.post(
         f"{API_URL}/chat/{session_id}",
         json={"message": message},
         timeout=30,
     )
-    response.raise_for_status()
+
+
+def post_chat(message: str) -> dict[str, Any]:
+    session_id = ensure_session()
+    response = send_chat(session_id, message)
+    try:
+        response.raise_for_status()
+    except requests.HTTPError:
+        if response.status_code != 404:
+            raise
+
+        st.session_state.session_id = None
+        response = send_chat(ensure_session(), message)
+        response.raise_for_status()
+
     return response.json()
 
 
