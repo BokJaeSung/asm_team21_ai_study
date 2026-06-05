@@ -352,7 +352,7 @@ def render_message(message: dict[str, Any]) -> None:
             for s in sources:
                 source = f"📎 {_escape(s['source'])}"
                 url = s.get("url")
-                if url:
+                if url and (url.startswith("http://") or url.startswith("https://")):
                     url_html = (
                         f'<a class="source-url" href="{_escape(url)}" target="_blank" '
                         f'rel="noopener noreferrer">{_escape(url)}</a>'

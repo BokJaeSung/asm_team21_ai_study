@@ -39,7 +39,7 @@ def _load_source_urls() -> dict[str, str]:
     with open(CSV_PATH, encoding="utf-8-sig") as f:
         rows = csv.DictReader(f)
         return {
-            _slugify(row["문서 제목"]): row.get("수집 채널", "").strip()
+            _slugify(row["문서 제목"]): (row.get("수집 채널") or "").strip()
             for row in rows
             if row.get("문서 제목")
         }
@@ -109,6 +109,10 @@ def ingest(reset: bool = False) -> None:
         source_url = source_urls.get(name, "")
         doc_text = _replace_original_url(doc_text, source_url)
         vectors = np.load(npy_path)
+        if vectors.size == 0:
+            print(f"  ! {name}: 빈 벡터 배열 — 건너뜀")
+            continue
+
         metadata = {"source": name}
         if source_url:
             metadata["url"] = source_url

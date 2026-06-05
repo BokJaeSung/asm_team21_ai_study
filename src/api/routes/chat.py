@@ -13,6 +13,7 @@ router = APIRouter(prefix="/chat", tags=["chat"])
 def _make_preview(content: str, max_len: int = 120) -> str:
     skipped_prefixes = ("원문:", "등록일:", "작성자:")
     parts: list[str] = []
+    current_len = 0
     for line in content.splitlines():
         text = line.strip()
         if not text or text.startswith(skipped_prefixes):
@@ -20,7 +21,8 @@ def _make_preview(content: str, max_len: int = 120) -> str:
         if "http://" in text or "https://" in text:
             continue
         parts.append(text)
-        if len(" ".join(parts)) >= max_len:
+        current_len += len(text) + (1 if current_len > 0 else 0)
+        if current_len >= max_len:
             break
 
     preview = " ".join(parts)
