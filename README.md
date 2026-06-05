@@ -87,51 +87,40 @@ User Query
 
 ## 설치 및 실행
 
-### 1. 의존성 설치
-
-```bash
-pip install -r requirements.txt
-pip install gdown  # 데이터 다운로드용
-```
-
-### 2. 환경변수 설정
+### 1. 환경변수 설정
 
 ```bash
 cp .env.example .env
 # .env 에서 UPSTAGE_API_KEY 입력
 ```
 
-### 3. 데이터 다운로드 및 ChromaDB 적재
+### 2. 데이터 다운로드 및 ChromaDB 적재
 
 원문과 임베딩 파일은 Google Drive에 저장되어 있다. (문서 인덱스: [구글 시트](https://docs.google.com/spreadsheets/d/1gXUPPp3z0Vw2s3I6JzXrmPzW1ZIqgn3KflOUtgzaTiQ))
 
 ```bash
+pip install gdown
+
 # Google Drive에서 원문(.md) + 임베딩(.npy) 다운로드
 python scripts/setup_data.py
 
 # ChromaDB에 적재
+pip install -r requirements.txt
 python -m src.ingest_crawl
 
 # 전체 초기화 후 재적재
 python -m src.ingest_crawl --reset
 ```
 
-### 4. 서버 실행
+### 3. API 서버 실행 (Docker)
 
 ```bash
-# 기본 실행
-python run.py
-
-# 개발 모드 (핫 리로드)
-python run.py --reload
-
-# 포트 변경
-python run.py --port 9000
+docker compose up --build
 ```
 
 서버 기동 후 `http://localhost:8000/docs` 에서 Swagger UI 확인.
 
-### 5. Streamlit UI 실행
+### 4. Streamlit UI 실행
 
 ```bash
 pip install streamlit requests
@@ -140,12 +129,6 @@ streamlit run sadari_front/app/ui.py --server.headless true
 
 - Streamlit UI: `http://localhost:8501`
 - FastAPI docs: `http://localhost:8000/docs`
-
-### 6. Docker로 실행 (API 서버)
-
-```bash
-docker compose up --build
-```
 
 ---
 
