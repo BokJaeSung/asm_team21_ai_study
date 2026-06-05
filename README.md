@@ -117,7 +117,7 @@ python -m src.ingest_crawl --reset
 API 서버와 Streamlit UI를 함께 띄운다.
 
 ```bash
-docker compose -f sadari_front/docker-compose.yml up --build
+docker compose up --build
 ```
 
 - Streamlit UI: `http://localhost:8501`
