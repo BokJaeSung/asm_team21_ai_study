@@ -47,6 +47,12 @@ OT 자료와 홈페이지 공지사항에서 정보를 검색해 자연어 질�
 │           ├── sessions.py       # POST/GET/DELETE /sessions
 │           └── chat.py           # POST /chat/{session_id}
 │
+├── sadari_front/                 # Streamlit UI + Docker 실행 구성
+│   ├── Dockerfile                # 루트 API와 UI 공용 이미지
+│   ├── docker-compose.yml        # FastAPI + Streamlit 컨테이너 실행
+│   └── app/
+│       └── ui.py                 # 세션 기반 채팅 UI
+│
 ├── data/                         # 런타임 생성 (git 제외)
 │   ├── raw/                      # PDF → 텍스트·마크다운 원문
 │   ├── embeddings/               # .npy + .json 임베딩 파일
@@ -122,6 +128,18 @@ python run.py --port 9000
 ```
 
 서버 기동 후 `http://localhost:8000/docs` 에서 Swagger UI 확인.
+
+### 5. Streamlit UI + API Docker 실행
+
+```bash
+cd sadari_front
+cp ../.env.example ../.env
+# ../.env 에서 UPSTAGE_API_KEY 입력
+docker compose up --build
+```
+
+- Streamlit UI: `http://localhost:8501`
+- FastAPI docs: `http://localhost:8000/docs`
 
 ---
 
