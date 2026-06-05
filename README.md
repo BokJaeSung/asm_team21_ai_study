@@ -112,19 +112,12 @@ python -m src.ingest_crawl
 python -m src.ingest_crawl --reset
 ```
 
-### 3. API 서버 실행 (Docker)
+### 3. 전체 서비스 실행 (Docker)
+
+API 서버와 Streamlit UI를 함께 띄운다.
 
 ```bash
-docker compose up --build
-```
-
-서버 기동 후 `http://localhost:8000/docs` 에서 Swagger UI 확인.
-
-### 4. Streamlit UI 실행
-
-```bash
-pip install streamlit requests
-streamlit run sadari_front/app/ui.py --server.headless true
+docker compose -f sadari_front/docker-compose.yml up --build
 ```
 
 - Streamlit UI: `http://localhost:8501`
