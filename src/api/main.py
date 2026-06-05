@@ -1,9 +1,15 @@
 from __future__ import annotations
 
+import logging
 import threading
 import time
 
 from fastapi import FastAPI
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s %(levelname)s %(name)s - %(message)s",
+)
 
 from .routes import chat as chat_router
 from .routes import sessions as sessions_router
