@@ -11,6 +11,8 @@
 from __future__ import annotations
 
 import argparse
+import csv
+import re
 import sys
 from pathlib import Path
 
@@ -18,13 +20,53 @@ import numpy as np
 import chromadb
 
 ROOT = Path(__file__).resolve().parent.parent
+CSV_PATH = ROOT / "사다리타기 문서 인덱스 - 사다리타기 문서 인덱스.csv"
 RAW_DIR = ROOT / "data" / "raw"
 EMB_DIR = ROOT / "data" / "embeddings"
+
+
+def _slugify(title: str) -> str:
+    title = re.sub(r"[\[\]()【】『』「」《》<>]", "", title)
+    title = re.sub(r"\s+", "_", title.strip())
+    title = re.sub(r"[^\w가-힣-]", "", title)
+    return title[:60]
+
+
+def _load_source_urls() -> dict[str, str]:
+    if not CSV_PATH.exists():
+        return {}
+
+    with open(CSV_PATH, encoding="utf-8-sig") as f:
+        rows = csv.DictReader(f)
+        return {
+            _slugify(row["문서 제목"]): row.get("수집 채널", "").strip()
+            for row in rows
+            if row.get("문서 제목")
+        }
+
+
+def _replace_original_url(doc_text: str, source_url: str) -> str:
+    if not source_url:
+        return doc_text
+
+    lines = doc_text.split("\n")
+    for idx, line in enumerate(lines[:8]):
+        if line.strip().startswith("원문:"):
+            lines[idx] = f"원문: {source_url}"
+            return "\n".join(lines)
+
+    if lines and lines[0].startswith("#"):
+        lines.insert(1, "")
+        lines.insert(2, f"원문: {source_url}")
+        return "\n".join(lines)
+
+    return f"원문: {source_url}\n\n{doc_text}"
 
 
 def ingest(reset: bool = False) -> None:
     from .config import get_settings
     s = get_settings()
+    source_urls = _load_source_urls()
 
     client = chromadb.PersistentClient(path=s.chroma_path)
 
@@ -64,7 +106,12 @@ def ingest(reset: bool = False) -> None:
             print(f"  ! {name}: 원문 파일 없음 — 건너뜀")
             continue
 
+        source_url = source_urls.get(name, "")
+        doc_text = _replace_original_url(doc_text, source_url)
         vectors = np.load(npy_path)
+        metadata = {"source": name}
+        if source_url:
+            metadata["url"] = source_url
 
         if vectors.ndim == 1:
             # 단일 벡터: 문서 전체를 하나의 청크로
@@ -72,7 +119,7 @@ def ingest(reset: bool = False) -> None:
                 ids=[name],
                 documents=[doc_text],
                 embeddings=[vectors.tolist()],
-                metadatas=[{"source": name}],
+                metadatas=[metadata],
             )
             total += 1
         else:
@@ -86,7 +133,7 @@ def ingest(reset: bool = False) -> None:
                 ids.append(f"{name}_{i}")
                 docs.append(chunk_text)
                 embs.append(vec.tolist())
-                metas.append({"source": name, "chunk": i})
+                metas.append({**metadata, "chunk": i})
             collection.upsert(ids=ids, documents=docs, embeddings=embs, metadatas=metas)
             total += len(vectors)
 

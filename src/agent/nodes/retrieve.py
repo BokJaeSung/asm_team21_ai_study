@@ -36,10 +36,14 @@ def retrieve_node(state: AgentState) -> dict:
             results["metadatas"][0],
             results["distances"][0],
         ):
-            chunks.append({
+            meta = meta or {}
+            chunk = {
                 "content": doc,
                 "source": meta.get("source", "unknown"),
                 "score": round(1 - dist, 4),  # cosine distance → similarity
-            })
+            }
+            if meta.get("url"):
+                chunk["url"] = meta["url"]
+            chunks.append(chunk)
 
     return {"retrieved_chunks": chunks, "execution_history": ["retrieve_documents"]}
