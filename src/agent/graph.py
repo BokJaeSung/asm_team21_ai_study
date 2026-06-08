@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import logging
+import time
 from functools import lru_cache
 
 from langgraph.graph import END, START, StateGraph
@@ -15,28 +17,47 @@ from .nodes.retrieve import retrieve_node
 from .nodes.router import router_node
 from .state import AgentState
 
+logger = logging.getLogger(__name__)
+
+
+def _logged(name: str, fn):
+    def wrapper(state: AgentState):
+        logger.info("[GRAPH] ▶ %s", name)
+        t0 = time.perf_counter()
+        result = fn(state)
+        logger.info("[GRAPH] ✓ %s (%.2fs)", name, time.perf_counter() - t0)
+        return result
+    wrapper.__name__ = name
+    return wrapper
+
 
 # ── 조건부 엣지 함수 ─────────────────────────────────────────────────
 
 def _route_after_router(state: AgentState) -> str:
     intent = state["intent"]
     if intent == "general":
-        return "handle_general"
-    if intent == "soma_unrelated":
-        return "handle_irrelevant"
-    return "retrieve_documents"  # soma_query / soma_summarize / schedule_link
+        next_node = "handle_general"
+    elif intent == "soma_unrelated":
+        next_node = "handle_irrelevant"
+    else:
+        next_node = "retrieve_documents"
+    logger.info("[GRAPH] ⤷ router → %s (intent=%s)", next_node, intent)
+    return next_node
 
 
 def _route_after_retrieve(state: AgentState) -> str:
     if not state["retrieved_chunks"]:
-        return "handle_not_found"
-    intent = state["intent"]
-    mapping = {
-        "soma_query":     "generate_answer",
-        "soma_summarize": "generate_summary",
-        "schedule_link":  "format_schedule_link",
-    }
-    return mapping.get(intent, "generate_answer")
+        next_node = "handle_not_found"
+    else:
+        intent = state["intent"]
+        mapping = {
+            "soma_query":     "generate_answer",
+            "soma_summarize": "generate_summary",
+            "schedule_link":  "format_schedule_link",
+        }
+        next_node = mapping.get(intent, "generate_answer")
+    logger.info("[GRAPH] ⤷ retrieve_documents → %s", next_node)
+    return next_node
 
 
 # ── 그래프 조립 ──────────────────────────────────────────────────────

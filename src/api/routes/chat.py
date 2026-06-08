@@ -10,6 +10,27 @@ from ..schemas import ChatRequest, ChatResponse, SourceDocument
 router = APIRouter(prefix="/chat", tags=["chat"])
 
 
+def _make_preview(content: str, max_len: int = 120) -> str:
+    skipped_prefixes = ("원문:", "등록일:", "작성자:")
+    parts: list[str] = []
+    current_len = 0
+    for line in content.splitlines():
+        text = line.strip()
+        if not text or text.startswith(skipped_prefixes):
+            continue
+        if "http://" in text or "https://" in text:
+            continue
+        parts.append(text)
+        current_len += len(text) + (1 if current_len > 0 else 0)
+        if current_len >= max_len:
+            break
+
+    preview = " ".join(parts)
+    if len(preview) <= max_len:
+        return preview
+    return preview[: max_len - 3].rstrip() + "..."
+
+
 @router.post("/{session_id}", response_model=ChatResponse)
 def chat(session_id: str, body: ChatRequest):
     session = session_manager.get(session_id)
@@ -30,10 +51,20 @@ def chat(session_id: str, body: ChatRequest):
 
     session.append_turn(body.message, result["generated_answer"])
 
-    sources = [
-        SourceDocument(source=c["source"], preview=c["content"][:100])
-        for c in result.get("retrieved_chunks", [])
-    ]
+    sources: list[SourceDocument] = []
+    seen_sources: set[tuple[str, str | None]] = set()
+    for c in result.get("retrieved_chunks", []):
+        key = (c["source"], c.get("url"))
+        if key in seen_sources:
+            continue
+        seen_sources.add(key)
+        sources.append(
+            SourceDocument(
+                source=c["source"],
+                preview=_make_preview(c["content"]),
+                url=c.get("url"),
+            )
+        )
 
     return ChatResponse(
         session_id=session_id,

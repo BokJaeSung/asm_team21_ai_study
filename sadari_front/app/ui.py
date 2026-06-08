@@ -147,6 +147,12 @@ footer { display: none !important; }
     border-radius: 0 10px 10px 0; padding: 0.45rem 0.75rem; font-size: 0.78rem; color: #0c4a6e;
 }
 .source-card b { display: block; color: #0369a1; margin-bottom: 0.1rem; }
+.source-card a { color: #0369a1; text-decoration: none; }
+.source-card a:hover { text-decoration: underline; }
+.source-url {
+    display: block; margin: 0.12rem 0 0.25rem 0; font-size: 0.72rem;
+    line-height: 1.35; overflow-wrap: anywhere; word-break: break-all;
+}
 
 /* ── 후속 질문 ── */
 .follow-up-wrap { margin-top: 0.45rem; display: flex; flex-direction: column; gap: 0.35rem; }
@@ -364,10 +370,21 @@ def render_message(message: dict[str, Any]) -> None:
     else:
         source_html = ""
         if sources:
-            cards = "".join(
-                f'<div class="source-card"><b>📎 {_escape(s["source"])}</b>{_escape(s.get("preview", ""))}</div>'
-                for s in sources
-            )
+            cards = ""
+            for s in sources:
+                source = f"📎 {_escape(s['source'])}"
+                url = s.get("url")
+                if url and (url.startswith("http://") or url.startswith("https://")):
+                    url_html = (
+                        f'<a class="source-url" href="{_escape(url)}" target="_blank" '
+                        f'rel="noopener noreferrer">{_escape(url)}</a>'
+                    )
+                else:
+                    url_html = ""
+                cards += (
+                    f'<div class="source-card"><b>{source}</b>'
+                    f'{url_html}{_escape(s.get("preview", ""))}</div>'
+                )
             source_html = f'<div class="source-wrap">{cards}</div>'
 
         follow_up_html = ""

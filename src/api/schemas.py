@@ -10,6 +10,7 @@ class ChatRequest(BaseModel):
 class SourceDocument(BaseModel):
     source: str
     preview: str  # 청크 앞 100자
+    url: str | None = None
 
 
 class ChatResponse(BaseModel):
