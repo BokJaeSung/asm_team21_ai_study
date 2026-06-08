@@ -17,5 +17,6 @@ class AgentState(TypedDict):
     intent: str
     retrieved_chunks: list[dict]          # [{"content": str, "source": str, "score": float}]
     generated_answer: str
+    follow_up_questions: list[str]
     execution_history: Annotated[list[str], operator.add]  # 각 노드가 이름을 append
     chat_history: list[dict]              # [{"role": "user"|"assistant", "content": str}]

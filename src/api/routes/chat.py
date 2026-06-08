@@ -21,6 +21,7 @@ def chat(session_id: str, body: ChatRequest):
         "intent":            "",
         "retrieved_chunks":  [],
         "generated_answer":  "",
+        "follow_up_questions": [],
         "execution_history": [],
         "chat_history":      list(session.chat_history),
     }
@@ -37,6 +38,7 @@ def chat(session_id: str, body: ChatRequest):
     return ChatResponse(
         session_id=session_id,
         answer=result["generated_answer"],
+        follow_up_questions=result.get("follow_up_questions", []),
         intent=result["intent"],
         sources=sources,
         execution_history=result.get("execution_history", []),

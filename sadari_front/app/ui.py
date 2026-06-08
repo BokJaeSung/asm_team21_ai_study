@@ -148,6 +148,22 @@ footer { display: none !important; }
 }
 .source-card b { display: block; color: #0369a1; margin-bottom: 0.1rem; }
 
+/* ── 후속 질문 ── */
+.follow-up-wrap { margin-top: 0.45rem; display: flex; flex-direction: column; gap: 0.35rem; }
+.follow-up-title { font-size: 0.72rem; font-weight: 700; color: #2563eb; }
+.follow-up-chip {
+    display: block; width: fit-content; max-width: 100%;
+    background: #ffffff; border: 1px solid #bfdbfe; color: #1e40af;
+    border-radius: 999px; padding: 0.35rem 0.7rem;
+    font-size: 0.78rem; line-height: 1.4; cursor: pointer;
+    box-shadow: 0 1px 5px rgba(37,99,235,0.08);
+    transition: all 0.15s;
+}
+.follow-up-chip:hover {
+    background: #2563eb; border-color: #2563eb; color: #ffffff;
+    transform: translateY(-1px);
+}
+
 /* ── 의도 뱃지 ── */
 .intent-badge {
     display: inline-block; background: #dbeafe; color: #1d4ed8;
@@ -215,6 +231,11 @@ def inject_js() -> None:
                 const exBtn = e.target.closest('.ex-btn');
                 if (exBtn) {
                     const prompt = exBtn.getAttribute('data-prompt');
+                    if (prompt) p.fillChatInput(prompt);
+                }
+                const followUpBtn = e.target.closest('.follow-up-chip');
+                if (followUpBtn) {
+                    const prompt = followUpBtn.getAttribute('data-prompt');
                     if (prompt) p.fillChatInput(prompt);
                 }
             });
@@ -321,6 +342,7 @@ def render_message(message: dict[str, Any]) -> None:
     role = message["role"]
     content = _escape(message["content"]).replace("\n", "<br>")
     sources = message.get("sources", [])
+    follow_up_questions = message.get("follow_up_questions", [])
     intent = message.get("intent", "")
     ts = message.get("ts", "")
 
@@ -348,6 +370,19 @@ def render_message(message: dict[str, Any]) -> None:
             )
             source_html = f'<div class="source-wrap">{cards}</div>'
 
+        follow_up_html = ""
+        if follow_up_questions:
+            chips = "".join(
+                f'<span class="follow-up-chip" data-prompt="{_escape(q)}">{_escape(q)}</span>'
+                for q in follow_up_questions
+            )
+            follow_up_html = (
+                '<div class="follow-up-wrap">'
+                '<div class="follow-up-title">이어 물어보기</div>'
+                f'{chips}'
+                '</div>'
+            )
+
         badge = f'<span class="intent-badge">#{_escape(intent)}</span>' if intent else ""
         raw_content = message["content"]
         encoded = _encode(raw_content)
@@ -361,7 +396,7 @@ def render_message(message: dict[str, Any]) -> None:
                 </div>
                 <div class="msg-body">
                     <span class="msg-name">SOMA 도우미</span>
-                    <div class="bubble bot">{content}</div>{source_html}<div class="bubble-actions">
+                    <div class="bubble bot">{content}</div>{source_html}{follow_up_html}<div class="bubble-actions">
                         {badge}
                         <span class="copy-btn" data-text="{encoded}">📋 복사</span>
                     </div>
@@ -408,6 +443,7 @@ def fetch_response(prompt: str) -> None:
             "content": data["answer"],
             "intent": data["intent"],
             "sources": data.get("sources", []),
+            "follow_up_questions": data.get("follow_up_questions", []),
             "ts": datetime.now().strftime("%H:%M"),
         })
     except requests.RequestException:
@@ -416,6 +452,7 @@ def fetch_response(prompt: str) -> None:
             "content": "API 서버에 연결할 수 없어요. 🔌\nFastAPI 컨테이너가 실행 중인지 확인해 주세요.",
             "intent": "연결 오류",
             "sources": [],
+            "follow_up_questions": [],
             "ts": datetime.now().strftime("%H:%M"),
         })
     st.session_state.waiting = False
