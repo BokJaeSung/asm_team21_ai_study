@@ -32,6 +32,9 @@ footer { display: none !important; }
 [data-testid="stDecoration"] { display: none !important; }
 
 /* ── 전체 ── */
+html, body, .stApp, [data-testid="stAppViewContainer"] {
+    color-scheme: light !important;
+}
 .stApp { background: linear-gradient(160deg, #e8f4fd 0%, #dbeafe 100%); }
 
 /* ── 사이드바 ── */
@@ -196,15 +199,58 @@ footer { display: none !important; }
 .typing-dot:nth-child(3) { animation-delay: 0.4s; }
 
 /* ── 입력창 ── */
-[data-testid="stChatInputContainer"] > div {
-    background: #ffffff !important; border: 1.5px solid #93c5fd !important;
-    border-radius: 26px !important; box-shadow: 0 2px 12px rgba(37,99,235,0.1) !important;
-    padding: 0.2rem 0.5rem !important;
+[data-testid="stBottom"],
+[data-testid="stBottom"] > div,
+[class~="stBottom"],
+[class~="stBottom"] > div,
+[data-testid="stBottom"] [data-testid="stChatInputContainer"] {
+    background: #ffffff !important;
+    color: #1e293b !important;
 }
-[data-testid="stChatInputContainer"] > div:focus-within {
-    border-color: #2563eb !important; box-shadow: 0 0 0 3px rgba(37,99,235,0.15) !important;
+[data-testid="stChatInputContainer"] > div,
+[class~="stChatInput"] [data-testid="stChatInput"],
+[data-testid="stBottom"] [data-testid="stChatInput"] {
+    background: rgb(240, 242, 246) !important;
+    border: none !important;
+    box-shadow: none !important;
 }
-[data-testid="stChatInput"] textarea { color: #1e293b !important; font-size: 0.9rem !important; }
+[data-testid="stChatInputContainer"] > div:focus-within,
+[class~="stChatInput"] [data-testid="stChatInput"]:focus-within,
+[data-testid="stBottom"] [data-testid="stChatInput"]:focus-within {
+    border: none !important;
+    box-shadow: none !important;
+}
+[data-testid="stChatInput"] > div,
+[data-testid="stChatInput"] [data-baseweb="textarea"],
+[data-testid="stChatInput"] textarea {
+    background-color: rgb(240, 242, 246) !important;
+    border: none !important;
+    box-shadow: none !important;
+    outline: none !important;
+}
+[data-testid="stChatInput"] textarea {
+    color: #1e293b !important;
+    -webkit-text-fill-color: #1e293b !important;
+    font-size: 0.9rem !important;
+}
+[data-testid="stChatInput"] textarea::placeholder {
+    color: #64748b !important;
+    -webkit-text-fill-color: #64748b !important;
+    opacity: 1 !important;
+}
+[data-testid="stChatInputSubmitButton"] {
+    background: #e2e8f0 !important;
+    color: #64748b !important;
+}
+[data-testid="stChatInputSubmitButton"] svg {
+    fill: #64748b !important;
+    color: #64748b !important;
+}
+[data-testid="stCaptionContainer"],
+[data-testid="stCaptionContainer"] p {
+    color: #64748b !important;
+}
+[data-testid="stChatInput"] { border-radius: 0.5rem !important; }
 </style>
 """
 
