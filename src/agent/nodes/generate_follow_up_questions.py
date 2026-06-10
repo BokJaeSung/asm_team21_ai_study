@@ -16,6 +16,9 @@ def _coerce_questions(raw: str) -> list[str]:
     except json.JSONDecodeError:
         return []
 
+    if not isinstance(data, dict):
+        return []
+
     questions = data.get("follow_up_questions", [])
     if not isinstance(questions, list):
         return []
