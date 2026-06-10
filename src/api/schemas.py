@@ -16,6 +16,7 @@ class SourceDocument(BaseModel):
 class ChatResponse(BaseModel):
     session_id: str
     answer: str
+    follow_up_questions: list[str]
     intent: str
     sources: list[SourceDocument]
     execution_history: list[str]

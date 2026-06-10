@@ -8,6 +8,7 @@ from langgraph.graph import END, START, StateGraph
 
 from .nodes.format_schedule import format_schedule_node
 from .nodes.generate_answer import generate_answer_node
+from .nodes.generate_follow_up_questions import generate_follow_up_questions_node
 from .nodes.generate_summary import generate_summary_node
 from .nodes.handle_general import handle_general_node
 from .nodes.handle_irrelevant import handle_irrelevant_node
@@ -64,14 +65,15 @@ def _route_after_retrieve(state: AgentState) -> str:
 def _build_graph() -> StateGraph:
     g = StateGraph(AgentState)
 
-    g.add_node("router",               _logged("router",               router_node))
-    g.add_node("handle_general",       _logged("handle_general",       handle_general_node))
-    g.add_node("handle_irrelevant",    _logged("handle_irrelevant",    handle_irrelevant_node))
-    g.add_node("retrieve_documents",   _logged("retrieve_documents",   retrieve_node))
-    g.add_node("generate_answer",      _logged("generate_answer",      generate_answer_node))
-    g.add_node("generate_summary",     _logged("generate_summary",     generate_summary_node))
-    g.add_node("format_schedule_link", _logged("format_schedule_link", format_schedule_node))
-    g.add_node("handle_not_found",     _logged("handle_not_found",     handle_not_found_node))
+    g.add_node("router",              router_node)
+    g.add_node("handle_general",      handle_general_node)
+    g.add_node("handle_irrelevant",   handle_irrelevant_node)
+    g.add_node("retrieve_documents",  retrieve_node)
+    g.add_node("generate_answer",     generate_answer_node)
+    g.add_node("generate_follow_up_questions", generate_follow_up_questions_node)
+    g.add_node("generate_summary",    generate_summary_node)
+    g.add_node("format_schedule_link", format_schedule_node)
+    g.add_node("handle_not_found",    handle_not_found_node)
 
     g.add_edge(START, "router")
 
@@ -96,13 +98,14 @@ def _build_graph() -> StateGraph:
         },
     )
 
+    for answer_node in ("generate_answer", "generate_summary", "format_schedule_link"):
+        g.add_edge(answer_node, "generate_follow_up_questions")
+
     for terminal in (
         "handle_general",
         "handle_irrelevant",
         "handle_not_found",
-        "generate_answer",
-        "generate_summary",
-        "format_schedule_link",
+        "generate_follow_up_questions",
     ):
         g.add_edge(terminal, END)
 
