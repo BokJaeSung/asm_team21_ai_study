@@ -284,6 +284,14 @@ def inject_js() -> None:
             const p = window.parent;
             const doc = p.document;
 
+            const clearSidebarTimeouts = () => {
+                if (p.sidebarOpenTimeout != null) p.clearTimeout(p.sidebarOpenTimeout);
+                if (p.sidebarCloseTimeout != null) p.clearTimeout(p.sidebarCloseTimeout);
+                p.sidebarOpenTimeout = null;
+                p.sidebarCloseTimeout = null;
+            };
+            clearSidebarTimeouts();
+
             const previousOpenControl = doc.querySelector(
                 '#sidebar-open-icon, #sidebar-open-button'
             );
@@ -356,7 +364,9 @@ def inject_js() -> None:
                 );
                 const toggle = control?.matches('button') ? control : control?.querySelector('button');
                 if (toggle) toggle.click();
-                p.setTimeout(() => {
+                clearSidebarTimeouts();
+                p.sidebarOpenTimeout = p.setTimeout(() => {
+                    p.sidebarOpenTimeout = null;
                     p.sidebarOpenForcedHidden = false;
                     updateSidebarOpenButton();
                 }, 700);
@@ -379,7 +389,9 @@ def inject_js() -> None:
                 p.sidebarOpenForcedHidden = false;
                 p.sidebarOpenForcedVisible = true;
                 sidebarOpenIcon.classList.add('is-visible');
-                p.setTimeout(() => {
+                clearSidebarTimeouts();
+                p.sidebarCloseTimeout = p.setTimeout(() => {
+                    p.sidebarCloseTimeout = null;
                     p.sidebarOpenForcedVisible = false;
                     updateSidebarOpenButton();
                 }, 700);
