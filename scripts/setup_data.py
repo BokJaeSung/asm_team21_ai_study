@@ -91,7 +91,7 @@ def main() -> None:
     if not args.emb_only:
         download_raw(rows)
 
-    print("\n완료. 다음 단계: python -m src.ingest_chroma")
+    print("\n완료. 다음 단계: python -m src.ingest_crawl")
 
 
 if __name__ == "__main__":

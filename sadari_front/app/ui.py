@@ -32,6 +32,9 @@ footer { display: none !important; }
 [data-testid="stDecoration"] { display: none !important; }
 
 /* ── 전체 ── */
+html, body, .stApp, [data-testid="stAppViewContainer"] {
+    color-scheme: light !important;
+}
 .stApp { background: linear-gradient(160deg, #e8f4fd 0%, #dbeafe 100%); }
 
 /* ── 사이드바 ── */
@@ -51,6 +54,28 @@ footer { display: none !important; }
 [data-testid="stSidebarUserContent"] .stButton button:hover {
     background: #2563eb; border-color: #2563eb; color: #ffffff !important;
 }
+[data-testid="stSidebarCollapseButton"],
+[data-testid="stSidebarCollapseButton"] button,
+[data-testid="stSidebar"] [data-testid="stBaseButton-header"],
+[data-testid="stSidebar"] button[aria-label="Close sidebar"],
+[data-testid="stSidebar"] button[aria-label="Collapse sidebar"] {
+    display: flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
+}
+#sidebar-open-icon {
+    position: fixed; top: 0.75rem; left: 0.75rem; z-index: 1000;
+    display: none; align-items: center; justify-content: center;
+    width: 24px; height: 24px;
+    color: #1e3a5f !important;
+    -webkit-text-fill-color: #1e3a5f !important;
+    fill: #1e3a5f !important;
+    font-size: 24px !important;
+    line-height: 1;
+    cursor: pointer;
+}
+#sidebar-open-icon.is-visible { display: inline-flex; }
 
 /* ── 메인 ── */
 .block-container {
@@ -196,15 +221,58 @@ footer { display: none !important; }
 .typing-dot:nth-child(3) { animation-delay: 0.4s; }
 
 /* ── 입력창 ── */
-[data-testid="stChatInputContainer"] > div {
-    background: #ffffff !important; border: 1.5px solid #93c5fd !important;
-    border-radius: 26px !important; box-shadow: 0 2px 12px rgba(37,99,235,0.1) !important;
-    padding: 0.2rem 0.5rem !important;
+[data-testid="stBottom"],
+[data-testid="stBottom"] > div,
+[class~="stBottom"],
+[class~="stBottom"] > div,
+[data-testid="stBottom"] [data-testid="stChatInputContainer"] {
+    background: #ffffff !important;
+    color: #1e293b !important;
 }
-[data-testid="stChatInputContainer"] > div:focus-within {
-    border-color: #2563eb !important; box-shadow: 0 0 0 3px rgba(37,99,235,0.15) !important;
+[data-testid="stChatInputContainer"] > div,
+[class~="stChatInput"] [data-testid="stChatInput"],
+[data-testid="stBottom"] [data-testid="stChatInput"] {
+    background: rgb(240, 242, 246) !important;
+    border: none !important;
+    box-shadow: none !important;
 }
-[data-testid="stChatInput"] textarea { color: #1e293b !important; font-size: 0.9rem !important; }
+[data-testid="stChatInputContainer"] > div:focus-within,
+[class~="stChatInput"] [data-testid="stChatInput"]:focus-within,
+[data-testid="stBottom"] [data-testid="stChatInput"]:focus-within {
+    border: none !important;
+    box-shadow: none !important;
+}
+[data-testid="stChatInput"] > div,
+[data-testid="stChatInput"] [data-baseweb="textarea"],
+[data-testid="stChatInput"] textarea {
+    background-color: rgb(240, 242, 246) !important;
+    border: none !important;
+    box-shadow: none !important;
+    outline: none !important;
+}
+[data-testid="stChatInput"] textarea {
+    color: #1e293b !important;
+    -webkit-text-fill-color: #1e293b !important;
+    font-size: 0.9rem !important;
+}
+[data-testid="stChatInput"] textarea::placeholder {
+    color: #64748b !important;
+    -webkit-text-fill-color: #64748b !important;
+    opacity: 1 !important;
+}
+[data-testid="stChatInputSubmitButton"] {
+    background: #e2e8f0 !important;
+    color: #64748b !important;
+}
+[data-testid="stChatInputSubmitButton"] svg {
+    fill: #64748b !important;
+    color: #64748b !important;
+}
+[data-testid="stCaptionContainer"],
+[data-testid="stCaptionContainer"] p {
+    color: #64748b !important;
+}
+[data-testid="stChatInput"] { border-radius: 0.5rem !important; }
 </style>
 """
 
@@ -214,9 +282,136 @@ def inject_js() -> None:
         <script>
         (function() {
             const p = window.parent;
+            const doc = p.document;
+
+            const clearSidebarTimeouts = () => {
+                if (p.sidebarOpenTimeout != null) p.clearTimeout(p.sidebarOpenTimeout);
+                if (p.sidebarCloseTimeout != null) p.clearTimeout(p.sidebarCloseTimeout);
+                p.sidebarOpenTimeout = null;
+                p.sidebarCloseTimeout = null;
+            };
+            clearSidebarTimeouts();
+
+            const previousOpenControl = doc.querySelector(
+                '#sidebar-open-icon, #sidebar-open-button'
+            );
+            const closeIcon = doc.querySelector(
+                '[data-testid="stSidebarCollapseButton"] [data-testid="stIconMaterial"], '
+                + '[data-testid="stSidebar"] [data-testid="stIconMaterial"]'
+            );
+            const sidebarOpenIcon = closeIcon
+                ? closeIcon.cloneNode(false)
+                : doc.createElement('span');
+            sidebarOpenIcon.id = 'sidebar-open-icon';
+            sidebarOpenIcon.setAttribute('color', '#1e3a5f');
+            sidebarOpenIcon.setAttribute('data-testid', 'stIconMaterial');
+            sidebarOpenIcon.setAttribute('translate', 'no');
+            sidebarOpenIcon.setAttribute('role', 'button');
+            sidebarOpenIcon.setAttribute('tabindex', '0');
+            sidebarOpenIcon.setAttribute('aria-label', '사이드바 열기');
+            sidebarOpenIcon.title = '사이드바 열기';
+            sidebarOpenIcon.textContent = 'keyboard_double_arrow_right';
+            sidebarOpenIcon.style.setProperty(
+                'color',
+                '#1e3a5f',
+                'important',
+            );
+            sidebarOpenIcon.style.setProperty(
+                '-webkit-text-fill-color',
+                '#1e3a5f',
+                'important',
+            );
+            sidebarOpenIcon.style.setProperty(
+                'fill',
+                '#1e3a5f',
+                'important',
+            );
+            if (previousOpenControl) {
+                previousOpenControl.replaceWith(sidebarOpenIcon);
+            } else {
+                doc.body.appendChild(sidebarOpenIcon);
+            }
+
+            const isSidebarCollapsed = () => {
+                const sidebar = doc.querySelector('[data-testid="stSidebar"]');
+                if (!sidebar) return true;
+                const style = p.getComputedStyle(sidebar);
+                const rect = sidebar.getBoundingClientRect();
+                return style.display === 'none'
+                    || style.visibility === 'hidden'
+                    || rect.width < 20
+                    || rect.right <= 1;
+            };
+
+            const updateSidebarOpenButton = () => {
+                sidebarOpenIcon.classList.toggle(
+                    'is-visible',
+                    !p.sidebarOpenForcedHidden
+                        && (p.sidebarOpenForcedVisible || isSidebarCollapsed()),
+                );
+            };
+
+            const openSidebar = () => {
+                p.sidebarOpenForcedVisible = false;
+                p.sidebarOpenForcedHidden = true;
+                sidebarOpenIcon.classList.remove('is-visible');
+                const control = doc.querySelector(
+                    '[data-testid="stSidebarCollapsedControl"], '
+                    + '[data-testid="collapsedControl"], '
+                    + '[data-testid="stSidebarCollapseButton"] button, '
+                    + 'button[aria-label="Open sidebar"], '
+                    + 'button[aria-label="Expand sidebar"]'
+                );
+                const toggle = control?.matches('button') ? control : control?.querySelector('button');
+                if (toggle) toggle.click();
+                clearSidebarTimeouts();
+                p.sidebarOpenTimeout = p.setTimeout(() => {
+                    p.sidebarOpenTimeout = null;
+                    p.sidebarOpenForcedHidden = false;
+                    updateSidebarOpenButton();
+                }, 700);
+            };
+            sidebarOpenIcon.onclick = openSidebar;
+            sidebarOpenIcon.onkeydown = event => {
+                if (event.key === 'Enter' || event.key === ' ') openSidebar();
+            };
+
+            if (p.sidebarToggleClickHandler) {
+                doc.removeEventListener('click', p.sidebarToggleClickHandler, true);
+            }
+            p.sidebarToggleClickHandler = event => {
+                const closeControl = event.target.closest(
+                    '[data-testid="stSidebarCollapseButton"], '
+                    + 'button[aria-label="Close sidebar"], '
+                    + 'button[aria-label="Collapse sidebar"]'
+                );
+                if (!closeControl) return;
+                p.sidebarOpenForcedHidden = false;
+                p.sidebarOpenForcedVisible = true;
+                sidebarOpenIcon.classList.add('is-visible');
+                clearSidebarTimeouts();
+                p.sidebarCloseTimeout = p.setTimeout(() => {
+                    p.sidebarCloseTimeout = null;
+                    p.sidebarOpenForcedVisible = false;
+                    updateSidebarOpenButton();
+                }, 700);
+            };
+            doc.addEventListener('click', p.sidebarToggleClickHandler, true);
+
+            if (p.sidebarOpenButtonObserver) p.sidebarOpenButtonObserver.disconnect();
+            p.sidebarOpenButtonObserver = new p.MutationObserver(updateSidebarOpenButton);
+            p.sidebarOpenButtonObserver.observe(doc.body, {
+                attributes: true,
+                childList: true,
+                subtree: true,
+                attributeFilter: ['aria-expanded', 'class', 'style'],
+            });
+            if (p.sidebarOpenButtonInterval) p.clearInterval(p.sidebarOpenButtonInterval);
+            p.sidebarOpenButtonInterval = p.setInterval(updateSidebarOpenButton, 250);
+            updateSidebarOpenButton();
 
             p.fillChatInput = function(text) {
-                const textarea = p.document.querySelector('[data-testid="stChatInput"] textarea');
+                const textarea = doc.querySelector('[data-testid="stChatInput"] textarea');
                 if (!textarea) return;
                 const setter = Object.getOwnPropertyDescriptor(p.HTMLTextAreaElement.prototype, 'value').set;
                 setter.call(textarea, text);
@@ -224,7 +419,7 @@ def inject_js() -> None:
                 textarea.focus();
             };
 
-            p.document.addEventListener('click', function(e) {
+            doc.addEventListener('click', function(e) {
                 const copyBtn = e.target.closest('.copy-btn');
                 if (copyBtn) {
                     const text = decodeURIComponent(copyBtn.getAttribute('data-text'));
